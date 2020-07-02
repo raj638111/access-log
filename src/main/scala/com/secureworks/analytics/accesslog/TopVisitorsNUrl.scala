@@ -9,8 +9,10 @@ object TopVisitorsNUrl {
   val log: Logger = Log.getLogger(this.getClass.getName)
 
   def main(args: Array[String]): Unit = {
-    val param = new Param()
-    param.spark.sparkContext.textFile(param.inputPath)
+    val param = Param().parse(args)
+    val rdd = param.spark.sparkContext.textFile(param.inputPath)
+    val count = rdd.count()
+    log.info("Count -> " + count)
   }
 }
 
@@ -21,7 +23,7 @@ case class Param(
   val log: Logger = Log.getLogger(this.getClass.getName)
   val appName: String = "TopVisitorsNUrl"
 
-  def parse(args: Array[String]): Param = {
+  def parse(args: Array[String], sparkLocal: Boolean = false): Param = {
     val parser =
       new scopt.OptionParser[Param](appName) {
         opt[String]("inputPath").required().action { (x, c) =>
@@ -30,18 +32,20 @@ case class Param(
       }
     parser.parse(args, Param()) match {
       case Some(param) =>
-        param.copy(spark = getSparkSession())
+        param.copy(spark = getSparkSession(sparkLocal))
       case _ =>
         throw new Exception("Bad arguments")
     }
   }
 
-  private def getSparkSession(): SparkSession = {
-    val ss = SparkSession
-      .builder()
-      .appName(appName)
-      .getOrCreate();
-    log.info("Spark context created")
+  private def getSparkSession(sparkLocal: Boolean): SparkSession = {
+    val builder = sparkLocal match {
+      case true => SparkSession.builder.master("local[*]")
+      case false => SparkSession.builder()
+    }
+    val ss = builder.appName(appName)
+      .getOrCreate()
+    log.info("Spark session created")
     ss
   }
 

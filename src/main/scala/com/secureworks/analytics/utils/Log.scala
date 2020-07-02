@@ -13,7 +13,7 @@ object Log {
     case "info" => Level.INFO
     case _ => Level.INFO
   }
-  setLogger(Logger.getLogger("com.cf"), Level.DEBUG, logLevel)
+  setLogger(Logger.getLogger("com.secureworks"), Level.DEBUG, logLevel)
 
   def setLogger(logger: Logger, logLevel: Level, thresholdLevel: Level): Unit = {
     logger.setLevel(logLevel)
