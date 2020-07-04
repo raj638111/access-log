@@ -5,7 +5,7 @@ import java.text.SimpleDateFormat
 import com.secureworks.analytics.utils.Log
 import org.apache.log4j.Logger
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.{DataFrame, Dataset, SparkSession}
+import org.apache.spark.sql.{DataFrame, Dataset, SaveMode, SparkSession}
 import org.apache.spark.sql.functions._
 
 object TopVisitorsNUrl {
@@ -17,19 +17,48 @@ object TopVisitorsNUrl {
     val rdd = param.spark.sparkContext
       .textFile(param.inputPath).repartition(param.partitionCount)
     val (validDataRdd, validCount, invalidCount) = parseData(rdd)
-    //val topURLs = getTopNURLs(parsed, param.spark)
-    //val topVisitors = getTopNVisitors(parsed, param.spark)
+    val topVisitorsDf = getTopN(validDataRdd, param.spark,
+      "host", param.topN)
+    val topURLsDf = getTopN(validDataRdd, param.spark,
+      "url", param.topN)
+    createTable(param.dbNtable, param.spark)
+    System.exit(1)
+    storeResult(topVisitorsDf union topURLsDf, param.dbNtable)
+  }
+
+  def storeResult(result: DataFrame, dbNtable: String): Unit = {
+    result.write.mode(SaveMode.Overwrite)
+      .partitionBy("dt", "sort_col")
+      .insertInto(dbNtable)
+  }
+
+  def createTable(dbNtable: String, spark: SparkSession): Unit = {
+    val db = dbNtable.split("[.]{1}")(0)
+    val ddlDb = s"CREATE DATABASE IF NOT EXISTS ${db}"
+    log.info("ddlDb -> " + ddlDb)
+    val ddlTable =
+      s"""CREATE TABLE IF NOT EXISTS ${dbNtable} (
+         |count INT COMMENT 'No of visits',
+         |value STRING COMMENT 'Value of the sorting column')
+         |PARTITIONED BY (dt, sort_col)
+         |STORED AS PARQUET
+         |TBLPROPERTIES ("parquet.compress"="SNAPPY")
+         |""".stripMargin
+    log.info("ddlTable -> " + ddlTable)
+    spark.sql(ddlDb)
+    //spark.sql(ddlTable)
   }
 
   def getTopN(rdd: RDD[AccessInfo], spark: SparkSession, colName: String,
     topN: Int): DataFrame = {
     import spark.implicits._
     val df = rdd.toDF
-    val res = df.groupBy(col(colName), col("date"))
+    val res = df.groupBy(col(colName), col("dt"))
       .count
       .orderBy($"count".desc)
       .limit(topN)
-      .withColumn("-", lit("-"))
+      .withColumn("sort_col", lit(colName))
+      .withColumnRenamed(colName, "value")
     res
   }
 
@@ -51,7 +80,7 @@ object TopVisitorsNUrl {
           case date: java.sql.Date =>
             AccessInfo(host = host.trim, dTime = dTime.trim, httpMethod = httpMethod.trim,
               url = url.trim, version = version.trim, httpStatus = httpStatus.trim,
-              dataSize = dataSize.trim, date = date)
+              dataSize = dataSize.trim, dt = date)
           case _ =>
             null
         }
@@ -59,18 +88,6 @@ object TopVisitorsNUrl {
         null
     }
   }
-
-  /*def getSqlDate(dTime: String): java.sql.Date = {
-    val format = new SimpleDateFormat("dd/MMM/yyyy")
-    val rgx = "^([0-9]{2}/[a-zA-Z]{3}/[0-9]{4}).*$".r
-    dTime match {
-      case rgx(dt) =>
-        val parsed = format.parse(dt)
-        new java.sql.Date(parsed.getTime)
-      case _ =>
-        null
-    }
-  }*/
 
   def getSqlDate(dTime: String): java.sql.Date = {
     val format = new SimpleDateFormat("dd/MMM/yyyy")
@@ -86,20 +103,21 @@ object TopVisitorsNUrl {
 }
 
 case class AccessInfo(
-     host: String,
-     dTime: String,
-     httpMethod: String,
-     url: String,
-     version: String,
-     httpStatus: String,
-     dataSize: String,
-     date: java.sql.Date)
+   host: String,
+   dTime: String,
+   httpMethod: String,
+   url: String,
+   version: String,
+   httpStatus: String,
+   dataSize: String,
+   dt: java.sql.Date)
 
 case class Param(
   inputPath: String = null,
   partitionCount: Int = 8,
   topN: Int = 10,
-  spark: SparkSession = null){
+  spark: SparkSession = null,
+  dbNtable: String = "demo.test"){
 
   val log: Logger = Log.getLogger(this.getClass.getName)
   val appName: String = "TopVisitorsNUrl"
@@ -111,6 +129,12 @@ case class Param(
           c.copy(inputPath = x)}
         opt[Int]("partitionCount").optional().action { (x, c) =>
           c.copy(partitionCount = x)
+        }
+        opt[Int]("topN").optional().action { (x, c) =>
+          c.copy(topN = x)
+        }
+        opt[Int]("dbNtable").optional().action { (x, c) =>
+          c.copy(topN = x)
         }
       }
     parser.parse(args, Param()) match {
@@ -125,9 +149,24 @@ case class Param(
     val ss = SparkSession
       .builder()
       .appName(appName)
+      .config("spark.hadoop.hive.exec.dynamic.partition", "true")
+      .config("spark.hadoop.hive.exec.dynamic.partition.mode", "nonstrict")
+      .enableHiveSupport()
       .getOrCreate()
     log.info("Spark session created")
     ss
   }
 
 }
+
+
+/*
+
+spark-submit --master local[*] \
+--class com.secureworks.analytics.accesslog.TopVisitorsNUrl \
+./target/scala-2.12/access-log-analytics-assembly-0.1.0-SNAPSHOT.jar \
+--inputPath ftp://anonymous:anonpwd@localhost:2121/data.gz
+
+
+ */
+

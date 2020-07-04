@@ -12,6 +12,7 @@ class TopVisitorsNUrlTest extends FunSuite{
   // Setting master to local to run the unit tests
   val spark = SparkSession.builder.master("local[*]")
     .appName("test")
+    .enableHiveSupport()
     .getOrCreate()
   val log: Logger = Log.getLogger(this.getClass.getName)
 
@@ -32,7 +33,7 @@ class TopVisitorsNUrlTest extends FunSuite{
     assert(TopVisitorsNUrl.splitLine(goodLine) ==
       AccessInfo(host = "199.72.81.55", dTime = "01/Jul/1995:00:00:01 -0400",
         httpMethod = "GET", httpStatus = "200", dataSize = "6245",
-        date = getDate("1995-07-01"), url = "/history/apollo/",
+        dt = getDate("1995-07-01"), url = "/history/apollo/",
         version = "HTTP/1.0"))
   }
 
@@ -77,6 +78,24 @@ class TopVisitorsNUrlTest extends FunSuite{
     }
   }
 
+  test("Top 3 Visitors") {
+    var str =
+      """
+        |199.72.81.55 - - [01/Jul/1995:00:00:01 -0400]	 "GET /history/apollo/ HTTP/1.0" 200 6245
+        |unicomp6.unicomp.net - - [01/Jul/1995:00:00:06 -0400] "GET /shuttle/countdown/ HTTP/1.0" 200 3985
+        |199.120.110.21 - - [01/Jul/1995:00:00:09 -0400] "GET /shuttle/missions/sts-73/mission-sts-73.html HTTP/1.0" 200 4085
+        |burger.letters.com - - [01/Jul/1995:00:00:11 -0400] "GET /shuttle/countdown/liftoff.html HTTP/1.0" 304 0
+        |199.120.110.21 - - [01/Jul/1995:00:00:11 -0400] "GET /shuttle/missions/sts-73/sts-73-patch-small.gif HTTP/1.0" 200 4179
+        |burger.letters.com - - [01/Jul/1995:00:00:12 -0400] "GET /images/NASA-logosmall.gif HTTP/1.0" 304 0
+        |burger.letters.com - - [01/Jul/1995:00:00:12 -0400] "GET /shuttle/countdown/video/livevideo.gif HTTP/1.0" 200 0
+        |""".stripMargin
+    val rdd = spark.sparkContext.parallelize(str.split("\n"))
+    val (parsedRdd, _, _) = TopVisitorsNUrl.parseData(rdd)
+    val result = TopVisitorsNUrl.getTopN(parsedRdd, spark, "host", 3)
+    log.info(result.schema.treeString)
+    result.show(100, false)
+  }
+
   def sampleData(): Array[String] = {
     Array(
       """199.72.81.55 - - [01/Jul/1995:00:00:01 -0400] "GET /history/apollo/ HTTP/1.0" 200 6245""",
@@ -91,3 +110,4 @@ class TopVisitorsNUrlTest extends FunSuite{
     new java.sql.Date(parsed.getTime)
   }
 }
+
