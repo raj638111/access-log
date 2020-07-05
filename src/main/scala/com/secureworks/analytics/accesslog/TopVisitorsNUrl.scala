@@ -5,6 +5,7 @@ import java.text.SimpleDateFormat
 import com.secureworks.analytics.utils.Log
 import org.apache.log4j.Logger
 import org.apache.spark.rdd.RDD
+import org.apache.spark.sql.expressions.Window
 import org.apache.spark.sql.{DataFrame, Dataset, SaveMode, SparkSession}
 import org.apache.spark.sql.functions._
 
@@ -16,19 +17,21 @@ object TopVisitorsNUrl {
     val param = Param().parse(args)
     val rdd = param.spark.sparkContext
       .textFile(param.inputPath).repartition(param.partitionCount)
-    val (validDataRdd, validCount, invalidCount) = parseData(rdd)
+    val (validDataRdd, invalidCount) = parseData(rdd)
     val topVisitorsDf = getTopN(validDataRdd, param.spark,
       "host", param.topN)
     val topURLsDf = getTopN(validDataRdd, param.spark,
       "url", param.topN)
     createTable(param.dbNtable, param.spark)
-    System.exit(1)
-    storeResult(topVisitorsDf union topURLsDf, param.dbNtable)
+    storeResult(topVisitorsDf.union(topURLsDf), param.dbNtable)
   }
 
   def storeResult(result: DataFrame, dbNtable: String): Unit = {
-    result.write.mode(SaveMode.Overwrite)
-      .partitionBy("dt", "sort_col")
+    import result.sparkSession.implicits._
+    log.info("Schema -> " + result.schema.treeString)
+    result
+      .select($"count", $"value", $"dt", $"sort_col")
+      .write.mode(SaveMode.Overwrite)
       .insertInto(dbNtable)
   }
 
@@ -36,39 +39,42 @@ object TopVisitorsNUrl {
     val db = dbNtable.split("[.]{1}")(0)
     val ddlDb = s"CREATE DATABASE IF NOT EXISTS ${db}"
     log.info("ddlDb -> " + ddlDb)
+    spark.sql(ddlDb)
     val ddlTable =
       s"""CREATE TABLE IF NOT EXISTS ${dbNtable} (
          |count INT COMMENT 'No of visits',
          |value STRING COMMENT 'Value of the sorting column')
-         |PARTITIONED BY (dt, sort_col)
+         |PARTITIONED BY (dt DATE, sort_col STRING)
          |STORED AS PARQUET
          |TBLPROPERTIES ("parquet.compress"="SNAPPY")
          |""".stripMargin
     log.info("ddlTable -> " + ddlTable)
-    spark.sql(ddlDb)
-    //spark.sql(ddlTable)
+    spark.sql(ddlTable)
   }
 
   def getTopN(rdd: RDD[AccessInfo], spark: SparkSession, colName: String,
     topN: Int): DataFrame = {
     import spark.implicits._
+    val windowFn = Window
+      .partitionBy($"dt")
+      .orderBy($"count".desc)
+
     val df = rdd.toDF
     val res = df.groupBy(col(colName), col("dt"))
       .count
-      .orderBy($"count".desc)
-      .limit(topN)
+      .withColumn("rnk", dense_rank() over windowFn)
+      .where(s"rnk >= 1 and rnk <= $topN")
+      .drop("rnk")
       .withColumn("sort_col", lit(colName))
       .withColumnRenamed(colName, "value")
     res
   }
 
-  def parseData(rdd: RDD[String]): (RDD[AccessInfo], Long, Long) = {
+  def parseData(rdd: RDD[String]): (RDD[AccessInfo], Long) = {
     val mapped: RDD[AccessInfo] = rdd.map(splitLine(_)).cache
-    val validData: RDD[AccessInfo] = mapped.filter(_ != null).cache
-    val validCount = validData.count
+    val validData: RDD[AccessInfo] = mapped.filter(_ != null)
     val invalidCount: Long = mapped.filter(_ == null).count
-    mapped.unpersist()
-    (validData, validCount, invalidCount)
+    (validData, invalidCount)
   }
 
   def splitLine(line: String): AccessInfo = {
@@ -163,10 +169,37 @@ case class Param(
 /*
 
 spark-submit --master local[*] \
+--executor-memory 2G --driver-memory 2G \
 --class com.secureworks.analytics.accesslog.TopVisitorsNUrl \
-./target/scala-2.12/access-log-analytics-assembly-0.1.0-SNAPSHOT.jar \
+./target/scala-2.11/access-log-analytics-assembly-0.1.0-SNAPSHOT.jar \
+--inputPath ftp://anonymous:anonpwd@ita.ee.lbl.gov/traces/NASA_access_log_Jul95.gz
+
+spark-submit --master local[*] \
+--class com.secureworks.analytics.accesslog.TopVisitorsNUrl \
+./target/scala-2.11/access-log-analytics-assembly-0.1.0-SNAPSHOT.jar \
 --inputPath ftp://anonymous:anonpwd@localhost:2121/data.gz
 
+/spark/bin/spark-submit --master local[*] \
+--class com.secureworks.analytics.accesslog.TopVisitorsNUrl \
+/user-jars/scala-2.11/access-log-analytics-assembly-0.1.0-SNAPSHOT.jar \
+--inputPath ftp://anonymous:anonpwd@localhost:2121/data.gz
+
+/spark/bin/spark-submit --master local[*] \
+--class com.secureworks.analytics.accesslog.TopVisitorsNUrl \
+/user-jars/scala-2.11/access-log-analytics-assembly-0.1.0-SNAPSHOT.jar \
+--inputPath ftp://anonymous:anonpwd@localhost:2121/data.gz
+
+/spark/bin/spark-submit --master local[*] \
+--executor-memory 2G --driver-memory 2G \
+--class com.secureworks.analytics.accesslog.TopVisitorsNUrl \
+/user-jars/scala-2.11/access-log-analytics-assembly-0.1.0-SNAPSHOT.jar \
+--inputPath ftp://anonymous:anonpwd@ita.ee.lbl.gov/traces/NASA_access_log_Jul95.gz
+
+
+
+/spark/bin/spark-submit --master local[*] \
+--class org.apache.spark.examples.HdfsTest \
+/spark/examples/jars/spark-examples_2.11-2.4.5.jar
 
  */
 

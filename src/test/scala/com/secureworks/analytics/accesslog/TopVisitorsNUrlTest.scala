@@ -51,8 +51,7 @@ class TopVisitorsNUrlTest extends FunSuite{
 
   test("Parse Input Data (All valid data)"){
     val rdd = spark.sparkContext.parallelize(sampleData)
-    val (validDataRdd, validCount, invalidCount) = TopVisitorsNUrl.parseData(rdd)
-    assert(validCount == 4)
+    val (validDataRdd, invalidCount) = TopVisitorsNUrl.parseData(rdd)
     assert(invalidCount == 0)
   }
 
@@ -61,8 +60,7 @@ class TopVisitorsNUrlTest extends FunSuite{
       """/images/KSC-logosmall.gif HTTP/1.0" 200 1204""" match {
       case sampleData =>
         val rdd = spark.sparkContext.parallelize(sampleData)
-        val (validDataRdd, validCount, invalidCount) = TopVisitorsNUrl.parseData(rdd)
-        assert(validCount == 4)
+        val (validDataRdd, invalidCount) = TopVisitorsNUrl.parseData(rdd)
         assert(invalidCount == 1)
     }
   }
@@ -72,8 +70,7 @@ class TopVisitorsNUrlTest extends FunSuite{
       """/images/KSC-logosmall.gif HTTP/1.0" 200 1204""" match {
       case sampleData =>
         val rdd = spark.sparkContext.parallelize(sampleData)
-        val (validDataRdd, validCount, invalidCount) = TopVisitorsNUrl.parseData(rdd)
-        assert(validCount == 4)
+        val (validDataRdd, invalidCount) = TopVisitorsNUrl.parseData(rdd)
         assert(invalidCount == 1)
     }
   }
@@ -90,7 +87,7 @@ class TopVisitorsNUrlTest extends FunSuite{
         |burger.letters.com - - [01/Jul/1995:00:00:12 -0400] "GET /shuttle/countdown/video/livevideo.gif HTTP/1.0" 200 0
         |""".stripMargin
     val rdd = spark.sparkContext.parallelize(str.split("\n"))
-    val (parsedRdd, _, _) = TopVisitorsNUrl.parseData(rdd)
+    val (parsedRdd, _) = TopVisitorsNUrl.parseData(rdd)
     val result = TopVisitorsNUrl.getTopN(parsedRdd, spark, "host", 3)
     log.info(result.schema.treeString)
     result.show(100, false)
