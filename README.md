@@ -119,14 +119,14 @@ docker image rm <image name / ID>
 
 # How to compile & create Fat Jar?
 ```
-// Move to project home 
+-- Move to project home 
 cd /access-log-analytics 
 (If in container)
     (or)
 cd <PROJECT_HOME>
 (If in Host machine) 
 
-// Run all unit tests & build fat jar
+-- Run all unit tests & build fat jar
 sbt assembly
     ^ The first time this command is run in the container
       it will take some time to complete, as many dependencies
@@ -142,9 +142,9 @@ sbt assembly
 
 # How to run unit tests & code coverage?
 
-The unit test for the application is written using [ScalaTest](https://www.scalatest.org/)
+The unit tests for the application is written using [ScalaTest](https://www.scalatest.org/)
 
-All the unit test can be run using `sbt test`
+All the unit tests can be run using `sbt test`
 ```
 sbt test
 
@@ -211,17 +211,17 @@ using `spark-shell` to validate the output
 
 ```
 spark-shell
-scala> spark.table("demo.test").show(100, false)
-+-----+---------------------------------------+---+----------+--------+
-|count|value                                  |rnk|dt        |sort_col|
-+-----+---------------------------------------+---+----------+--------+
-|545  |piweba4y.prodigy.com                   |2  |1995-07-01|visitor |
-|533  |alyssa.prodigy.com                     |3  |1995-07-01|visitor |
-|619  |piweba3y.prodigy.com                   |1  |1995-07-01|visitor |
-|3960 |/images/NASA-logosmall.gif             |1  |1995-07-01|url     |
-|2684 |/shuttle/countdown/count.gif           |3  |1995-07-01|url     |
-|3521 |/images/KSC-logosmall.gif              |2  |1995-07-01|url     |
-...
+scala> spark.table("demo.test").where("dt='1995-07-01'").orderBy("dt").show(100, false)
++-----+----------------------------+---+----------+--------+
+|count|value                       |rnk|dt        |sort_col|
++-----+----------------------------+---+----------+--------+
+|619  |piweba3y.prodigy.com        |1  |1995-07-01|visitor |
+|545  |piweba4y.prodigy.com        |2  |1995-07-01|visitor |
+|533  |alyssa.prodigy.com          |3  |1995-07-01|visitor |
+|3960 |/images/NASA-logosmall.gif  |1  |1995-07-01|url     |
+|3521 |/images/KSC-logosmall.gif   |2  |1995-07-01|url     |
+|2684 |/shuttle/countdown/count.gif|3  |1995-07-01|url     |
++-----+----------------------------+---+----------+--------+
 where,
     count    = No of hits
     rnk      = Specifies the top N rank (we are using dense_rank()
@@ -233,3 +233,9 @@ where,
     value    = Value of the sort_col   
 
 ```
+
+Also try,
+```
+spark-shell
+scala> spark.table("demo.test").show(100, false)
+``` 
