@@ -1,7 +1,7 @@
 
 # What does this Spark App do?
 
-This spark application computes `topN` **visitors** & **URL** for the dataset available in FTP server ftp://ita.ee.lbl.gov/traces/NASA_access_log_Jul95.gz
+This spark application computes `topN` **visitors** & **URL** for the dataset available in [FTP server](ftp://ita.ee.lbl.gov/traces/NASA_access_log_Jul95.gz)
 
 # How to setup build environment?
 
@@ -57,7 +57,11 @@ access-log-analytics  boot  etc   lib  ... spark ...
     Project directory should be available    
 ```
 
-- Cleaning up Docker image & container
+5. **Cleaning up Docker image & container**
+
+Given below are the commands if needed to cleanup the 
+container and image
+
 ```
 -- Stop & Remove docker container
 docker container stop mySpark
