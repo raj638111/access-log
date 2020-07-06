@@ -1,14 +1,49 @@
 
 # What does this Spark App do?
 
-This spark application computes `topN` **visitors** & **URL** for the dataset available in [FTP server](ftp://ita.ee.lbl.gov/traces/NASA_access_log_Jul95.gz)
+This spark application computes `topN` **visitors** & **URL** for the dataset available in `ftp://ita.ee.lbl.gov/traces/NASA_access_log_Jul95.gz`
+
+# Project Structure
+
+```
+├── Dockerfile  // Docker file to create development environment
+├── README.md
+├── build.sbt
+├── derby.log
+├── metastore_db // Derby is used as hive metastore in Local environment
+│   ...
+├── project
+│   ├── build.properties
+│   ├── plugins.sbt
+├── spark-warehouse
+│   └── demo.db 
+├── src
+│   ├── main
+│   │   └── scala
+│   │       └── com
+│   │           └── secureworks
+│   │               └── analytics
+│   │                   ├── accesslog
+│   │                   │   ├── AccessInfo.scala       // Data object used to store parsed info
+│   │                   │   ├── Param.scala            // Parser for command line arguments
+│   │                   │   └── TopVisitorsNUrl.scala  // Our spark application
+│   │                   └── utils
+│   │                       └── Log.scala              // Custom logger to avoid log noise
+│   └── test
+│       └── scala
+│           └── com
+│               └── secureworks
+│                   └── analytics
+│                       └── accesslog
+│                           └── TopVisitorsNUrlTest.scala // Unit tests
+```
 
 # How to setup build environment?
 
-Build environment to compile & test the code can be created in the Local development machine using [Dockerfile](Dockerfile), which creates the Docker image with required prerequisites like `Spark` & `SBT` 
+Build environment to compile & test the code can be created in the Local development machine using [Dockerfile](Dockerfile) accompanied with this project. We use this file to create the Docker image with required prerequisites like `Spark` & `SBT` 
 
 1. **Ensure docker is installed and running in Local machine**
-2. **From the `${PROJECT_HOME}` directory, create docker image**
+2. **From the `${PROJECT_HOME}` directory in Local machine, create docker image**
  ```
 // Create docker image
 docker build .
@@ -29,12 +64,13 @@ In this example, IMAGE ID is 884114325a95
 docker run --rm \
 -v <PROJECT_HOME>:/access-log-analytics \
 -dit --name mySpark 884114325a95
+
                         ^ This is the Docker image ID we got from 
                           previous step
              ^ mySpark is the name we give to the container
 where,            
     PROJECT_HOME Is the absolute path of the directory in which you have
-                 clone the GIT repo
+                 cloned the GIT repo
                  Example: /home/someuser/workspace/access-log-analytics
 
 The above command creates a container called mySpark 
@@ -50,7 +86,7 @@ volume `/access-log-analytics`
 -- Access the container
 docker exec -it mySpark /bin/bash
 
--- Check if project directory is accessible in the container
+-- Check if project directory is available in the container
 ls
 access-log-analytics  boot  etc   lib  ... spark ...
     ^ 
@@ -148,16 +184,17 @@ As we are using only the Local derby database as a metastore for Hive,
 we should be able to see the derby metastore created in the current directory
 ```
 ls
-Dockerfile	build.sbt	metastore_db**	spark-warehouse**	target
-README.md	derby.log**	project		src
+Dockerfile	build.sbt	metastore_db<	spark-warehouse<	target
+README.md	derby.log<	project		src
 ```
 
 
 # Validating the output 
 
-**LIMITATIONS**: The development environment use the Local Derby database as metastore and is NOT configured with MySQL or PostgreSQl as a metastore (Because of the limitation in time)
-So the validation needs to be performed from the same directory
-in which we ran the application in previous step
+**LIMITATIONS**: The development environment use the Local Derby database as metastore 
+and is **NOT** configured with `MySQL` or `PostgreSQL` as a metastore (Because of the limitation in time).
+So, the validation needs to be performed from the same directory
+in which we ran the application in previous step.
 Also, we do not have a separate Hive installation, so we will be
 using `spark-shell` to validate the output
 
@@ -179,11 +216,9 @@ where,
     rnk      = Specifies the top N rank (we are using dense_rank()
                                     to compute topN)
     sort_col = The criteria for which the topN is calculated
-               Right now this has 2 values as per the project
-               requirement
-               `visitor` or `url`
+               Right now this has 2 values (`visitor` or `url`) as 
+               per the project requirement
+               
     value    = Value of the sort_col   
 
 ```
- 
-
