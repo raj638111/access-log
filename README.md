@@ -7,8 +7,8 @@ This spark application computes `topN` **visitors** & **URL** for the dataset av
 
 Build environment to compile & test the code can be created in the Local development machine using [Dockerfile](Dockerfile), which creates the Docker image with required prerequisites like `Spark` & `SBT` 
 
-- Ensure docker is installed and running in Local machine
-- From the `${PROJECT_HOME}` directory, create docker image
+1. **Ensure docker is installed and running in Local machine**
+2. **From the `${PROJECT_HOME}` directory, create docker image**
  ```
 // Create docker image
 docker build .
