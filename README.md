@@ -1,14 +1,14 @@
 Table of Contents
 =================
 
+   * [Table of Contents](#table-of-contents)
    * [What does this Spark App do?](#what-does-this-spark-app-do)
    * [Project Structure](#project-structure)
-   * [How to setup build environment?](#how-to-setup-build-environment)
+   * [How to setup build environment (Docker) ?](#how-to-setup-build-environment-docker-)
    * [How to compile &amp; create Fat Jar?](#how-to-compile--create-fat-jar)
    * [How to run unit tests &amp; code coverage?](#how-to-run-unit-tests--code-coverage)
    * [How to run the spark application?](#how-to-run-the-spark-application)
    * [Validating the output](#validating-the-output)
-
 
 # What does this Spark App do?
 
@@ -49,7 +49,7 @@ This spark application computes `topN` **visitors** & **URL** for the dataset av
 │                           └── TopVisitorsNUrlTest.scala // Unit tests
 ```
 
-# How to setup build environment?
+# How to setup build environment (Docker) ?
 
 Build environment to compile & test the code can be created in the Local development machine using [Dockerfile](Dockerfile) accompanied with this project. We use this file to create the Docker image with required prerequisites like `Spark` & `SBT` 
 
