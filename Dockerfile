@@ -5,20 +5,18 @@
 FROM ubuntu:18.04
 #Any label to recognise this image.
 LABEL image=Spark-base-image
-#ENV SPARK_VERSION=3.0.0
-#ENV HADOOP_VERSION=2.7
 #Run the following commands on my Linux machine
 #install the below packages on the ubuntu image
 RUN apt-get update -qq && \
     apt-get install -qq -y gnupg2 wget openjdk-8-jdk scala
 #Download the Spark binaries from the repo
 WORKDIR /
-RUN wget --no-verbose https://mirrors.ocf.berkeley.edu/apache/spark/spark-3.0.0/spark-3.0.0-bin-hadoop2.7.tgz
+RUN wget --no-verbose https://downloads.apache.org/spark/spark-3.0.0/spark-3.0.0-bin-hadoop3.2.tgz && \
+	  wget --no-verbose https://dl.bintray.com/sbt/debian/sbt-1.3.4.deb
 # Untar the downloaded binaries , move them the folder name spark and add the spark bin on my class path
-RUN tar -xzf /spark-3.0.0-bin-hadoop2.7.tgz && \
-    mv spark-3.0.0-bin-hadoop2.7 spark && \
+RUN tar -xzf spark-3.0.0-bin-hadoop3.2.tgz && \
+    mv spark-3.0.0-bin-hadoop3.2 spark && \
     echo "export PATH=$PATH:/spark/bin" >> ~/.bashrc
-
-RUN apt-get install ftp
+RUN dpkg -i sbt-1.3.4.deb
 #Expose the UI Port 4040
 EXPOSE 4040

@@ -2,6 +2,9 @@ package com.secureworks.analytics.utils
 
 import org.apache.log4j._
 
+/**
+ * Custom Logger to avoid too many noise
+ */
 object Log {
 
   val mPattern = "%d{yy/MM/dd HH:mm:ss} | %p | %c | %M() | %L | %m%n"
