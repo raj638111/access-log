@@ -1,3 +1,14 @@
+Table of Contents
+=================
+
+   * [What does this Spark App do?](#what-does-this-spark-app-do)
+   * [Project Structure](#project-structure)
+   * [How to setup build environment?](#how-to-setup-build-environment)
+   * [How to compile &amp; create Fat Jar?](#how-to-compile--create-fat-jar)
+   * [How to run unit tests &amp; code coverage?](#how-to-run-unit-tests--code-coverage)
+   * [How to run the spark application?](#how-to-run-the-spark-application)
+   * [Validating the output](#validating-the-output)
+
 
 # What does this Spark App do?
 
