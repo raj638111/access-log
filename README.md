@@ -22,7 +22,7 @@ ubuntu              18.04               8e4ce0a6ce69        2 weeks ago         
 // Note down the docker IMAGE ID
 In this example, IMAGE ID is 884114325a95
  ```   
-- Create and run a container using Docker image
+3. **Create and run a container using Docker image**
 ```
 -- Create the Container named mySpark
 
@@ -44,7 +44,7 @@ where you have cloned to the GIT repo to the container
 volume `/access-log-analytics`            
 ```
 
-- Access the container through shell prompt
+4. **Access the container through shell prompt**
 
 ```
 -- Access the container
