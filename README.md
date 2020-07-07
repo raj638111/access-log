@@ -147,7 +147,7 @@ where,
 
 ### Check malformed input records
 
-Malformed input records are stored in table `demo.invalid_data`
+Malformed input records are stored in table `demo.invalid_data` for later reference
 
 ```
 spark-shell
