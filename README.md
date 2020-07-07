@@ -149,7 +149,7 @@ where,
 
 Malformed input records are stored in table `demo.invalid_data` for later reference.  
 
-:exclamation: Eight Malformed records are found in ftp://anonymous:pwd@ita.ee.lbl.gov/traces/NASA_access_log_Jul95.gz
+:exclamation: Eight Malformed records are found in `ftp://anonymous:pwd@ita.ee.lbl.gov/traces/NASA_access_log_Jul95.gz`
 ```
 spark-shell
 scala> spark.table("demo.invalid_data").limit(100).show(100, false)
