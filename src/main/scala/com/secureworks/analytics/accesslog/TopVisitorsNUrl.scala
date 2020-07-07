@@ -158,13 +158,13 @@ object TopVisitorsNUrl {
    */
   def splitLine(line: String): AccessInfo = {
     // Ex: 199.72.81.55- - [01/Jul/1995:00:00:01 -0400] "GET /history/apollo/ HTTP/1.0" 200 6245
-    val rgx = """^(.*)- - \[(.*)\]\s+"([^\s]+) ([^\s]+) ([^\s]+)" (\d+) (\d+)$""".r
+    val rgx = """^(.*)- - \[(.*)\]\s+"([^\s]+) ([^\s]+).*" (\d+) ([\d-]+)$""".r
     line match {
-      case rgx(host, dTime, httpMethod, url, version, httpStatus, dataSize) =>
+      case rgx(host, dTime, httpMethod, url, httpStatus, dataSize) =>
         getSqlDate(dTime) match {
           case date: java.sql.Date =>
             AccessInfo(visitor = host.trim, dTime = dTime.trim, httpMethod = httpMethod.trim,
-              url = url.trim, version = version.trim, httpStatus = httpStatus.trim,
+              url = url.trim, httpStatus = httpStatus.trim,
               dataSize = dataSize.trim, dt = date)
           case _ =>
             AccessInfo(visitor = line)

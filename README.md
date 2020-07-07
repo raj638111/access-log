@@ -90,7 +90,7 @@ spark-submit --master local[*] \
 --topN 3 \
 --dbNtable demo.test \
 --outputPath file:///target/demo/test \
---invalidCount 0 \
+--invalidTolerance 0 \
 --invalidDataTbl "demo.invalid_data"
 
 where, 

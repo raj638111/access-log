@@ -8,7 +8,6 @@ case class AccessInfo(
    dTime: String = null,       // 01/Jul/1995:00:00:06 -0400
    httpMethod: String = null,  // GET
    url: String = null,         // /shuttle/countdown/
-   version: String = null,     // HTTP/1.0
    httpStatus: String = null,  // 200
    dataSize: String = null,    // 3985
    dt: java.sql.Date = null,   // 1995-07-01

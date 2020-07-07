@@ -34,13 +34,29 @@ class TopVisitorsNUrlTest extends FunSuite{
    * Parsing input line with valid format
    */
   test("Parse Single Line: Valid format"){
-    val goodLine =
-      """199.72.81.55 - - [01/Jul/1995:00:00:01 -0400] "GET /history/apollo/ HTTP/1.0" 200 6245"""
-    assert(TopVisitorsNUrl.splitLine(goodLine) ==
-      AccessInfo(visitor = "199.72.81.55", dTime = "01/Jul/1995:00:00:01 -0400",
-        httpMethod = "GET", httpStatus = "200", dataSize = "6245",
-        dt = TopVisitorsNUrl.getSqlDate("01/Jul/1995"), url = "/history/apollo/",
-        version = "HTTP/1.0"))
+    {
+      val goodLine =
+        """199.72.81.55 - - [01/Jul/1995:00:00:01 -0400] "GET /history/apollo/ HTTP/1.0" 200 6245"""
+      assert(TopVisitorsNUrl.splitLine(goodLine) ==
+        AccessInfo(visitor = "199.72.81.55", dTime = "01/Jul/1995:00:00:01 -0400",
+          httpMethod = "GET", httpStatus = "200", dataSize = "6245",
+          dt = TopVisitorsNUrl.getSqlDate("01/Jul/1995"), url = "/history/apollo/"))
+    }
+    {
+      val goodLine =
+        """link097.txdirect.net - - [01/Jul/1995:00:05:06 -0400] "GET /shuttle HTTP/1.0" 302 -"""
+      assert(TopVisitorsNUrl.splitLine(goodLine).dt != null)
+    }
+    {
+      val goodLine =
+        """pipe6.nyc.pipeline.com - - [01/Jul/1995:00:22:43 -0400] "GET /shuttle/missions/sts-71/movies/sts-71-mir-dock.mpg" 200 946425"""
+      assert(TopVisitorsNUrl.splitLine(goodLine).dt != null)
+    }
+    {
+      val goodLine =
+        """atl4-m52.ed.ac.uk - - [03/Jul/1995:09:33:50 -0400] "GET /images/NASA-logosmall.gif align=left HTTP/1.0" 200 786"""
+      assert(TopVisitorsNUrl.splitLine(goodLine).dt != null)
+    }
   }
 
   /**
