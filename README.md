@@ -147,7 +147,7 @@ where,
 
 ### Check malformed input records
 
-Malformed input records are stored in table `demo.invalid_data` for later reference
+Malformed input records are stored in table `demo.invalid_data` for later reference.  
 :exclamation: (8 Malformed records are found in ftp://anonymous:pwd@ita.ee.lbl.gov/traces/NASA_access_log_Jul95.gz)
 ```
 spark-shell
