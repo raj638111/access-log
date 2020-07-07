@@ -8,6 +8,7 @@ Table of Contents
         * [Start a container with the downloaded image...](#start-a-container-with-the-downloaded-image)
         * [Bash to the container &amp; submit the spark job...](#bash-to-the-container--submit-the-spark-job)
         * [Validate the output (Using spark-shell)...](#validate-the-output-using-spark-shell)
+        * [Check malformed input records](#check-malformed-input-records)
    * [Code Structure](#code-structure)
    * [Source code, ... and How to compile?](#source-code--and-how-to-compile)
         * [Prerequisites](#prerequisites)
@@ -17,6 +18,7 @@ Table of Contents
    * [Cleaning up Docker image &amp; container](#cleaning-up-docker-image--container)
         * [Cleanup Container](#cleanup-container)
         * [Cleanup Image](#cleanup-image)
+
 
 # What does this Spark App do?
 
@@ -81,7 +83,7 @@ access-log-analytics-assembly-0.1.0-SNAPSHOT.jar  ... spark-3.0.0-bin-hadoop3.2.
 Note: The job would take ~1 to 2 minutes to complete
 
 spark-submit --master local[*] \
---executor-memory 2G --driver-memory 2G \
+--driver-memory 3G \
 --conf spark.hadoop.fs.ftp.data.connection.mode="PASSIVE_LOCAL_DATA_CONNECTION_MODE" \
 --class com.secureworks.analytics.accesslog.TopVisitorsNUrl \
 ./access-log-analytics-assembly-0.1.0-SNAPSHOT.jar \
@@ -90,18 +92,23 @@ spark-submit --master local[*] \
 --topN 3 \
 --dbNtable demo.test \
 --outputPath file:///target/demo/test \
---invalidTolerance 0 \
+--invalidTolerance 10 \
 --invalidDataTbl "demo.invalid_data"
 
 where, 
-    inputPath      = Is the actual FTP input
-    partitionCount = Is the repartition count
-    topN           = Is the topN limit
-                     Ex: 3: Will get top 3 URL & Visitors for each date
-    dbNtable       = The hive external database.table where we 
-                     store the result
-    outputPath     = The path linked to hive external table 
-
+    inputPath        = Is the actual FTP input
+    partitionCount   = Is the repartition count
+    topN             = Is the topN limit
+                       Ex: 3: Will get top 3 URL & Visitors for each date
+    dbNtable         = The hive external database.table where we 
+                       store the result
+    outputPath       = The path linked to hive external table 
+    invalidTolerance = No of acceptable malformed records in input data.
+                       If exceeds, application throws exception to 
+                       alert the user. The result will still be 
+                       stored to the table <dbNtable>
+    invalidDataTbl   = All malformed records are stored in this
+                       managed table 
 ```
 
 ### Validate the output (Using spark-shell)...
@@ -137,6 +144,23 @@ where,
                per the project requirement
                
     value    = Value of the sort_col   
+```
+
+### Check malformed input records
+
+Malformed input records are stored in table `demo.invalid_data`
+
+```
+spark-shell
+scala> spark.table("demo.invalid_data").limit(100).show(100, false)
++-------------------------------------------------------------------------------------------------------+
+|str                                                                                                    |
++-------------------------------------------------------------------------------------------------------+
+|klothos.crl.research.digital.com - - [10/Jul/1995:16:45:50 -0400] "" 400 -                             |
+|jumbo.jet.uk - - [11/Jul/1995:08:06:29 -0400] "GET  HTTP/1.0" 302 -                                    |
+ ...
+|alyssa.p                                                                                               |
++-------------------------------------------------------------------------------------------------------+
 ```
 
 # Code Structure

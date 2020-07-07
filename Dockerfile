@@ -11,6 +11,7 @@ RUN apt-get update -qq && \
 
 WORKDIR /
 
+# Copy our job to image
 COPY ./target/scala-2.12/access-log-analytics-assembly-0.1.0-SNAPSHOT.jar .
 
 #Download the Spark binaries from the repo
