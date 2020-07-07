@@ -159,6 +159,9 @@ class TopVisitorsNUrlTest extends FunSuite{
     }
   }
 
+  /**
+   * Parse command line arguments
+   */
   test("User argument parsing"){
     val param = Param().parse(args())
     assert(param.inputPath ==
