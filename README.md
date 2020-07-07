@@ -49,7 +49,8 @@ rjkumratgmaildotcom/topn   latest              db07e6c99103        About an hour
 // Start the container
 
 docker run --rm  -dit  --name c1 rjkumratgmaildotcom/topn:latest
-where
+
+where,
   c1    = The container name
   --rm  = Ensures we can remove the container using `stop` 
           command without the need to explicitly provide `rm` command
@@ -90,7 +91,7 @@ spark-submit --master local[*] \
 --dbNtable demo.test \
 --outputPath file:///target/demo/test
 
-where 
+where, 
     inputPath      = Is the actual FTP input
     partitionCount = Is the repartition count
     topN           = Is the topN limit
