@@ -1,7 +1,6 @@
 Table of Contents
 =================
 
-   * [Table of Contents](#table-of-contents)
    * [What does this Spark App do?](#what-does-this-spark-app-do)
    * [How to run the Dockerized App and validate results?](#how-to-run-the-dockerized-app-and-validate-results)
         * [Download the image from Docker Hub...](#download-the-image-from-docker-hub)
