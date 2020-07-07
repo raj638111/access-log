@@ -11,7 +11,7 @@ Table of Contents
 
 **Note**: The dockerized app is only for demo and uses `--master local[*]`. For prod deployment, we would still need to deploy the standalone jar. Although it is possible to configure the Dockerized app to connect to specific Spark Master (or) Mesos (or) Yarn, this dockerized app is not configured / tested for that.
 
-### Download the image from Docker Hub
+### Download the image from Docker Hub...
 
 ```
 // Download the image
@@ -27,7 +27,7 @@ rjkumratgmaildotcom/topn   latest              db07e6c99103        About an hour
 
 ```
 
-### Start a container with the downloaded image
+### Start a container with the downloaded image...
 
 ```
 // Start the container
@@ -46,7 +46,7 @@ CONTAINER ID        IMAGE                      COMMAND             CREATED      
 24a22b6e08df        rjkumratgmaildotcom/topn   "/bin/bash"         14 minutes ago      Up 14 minutes                           c1        
 ```
 
-### Bash to the container & submit the spark job
+### Bash to the container & submit the spark job...
 
 ```
 // Open the Bash shell in Container
@@ -85,7 +85,7 @@ where
 
 ```
 
-### Validate the output (Using spark-shell)
+### Validate the output (Using spark-shell)...
 
 Note: Ensure not to change directory after spark-submit in the previous step. As the docker container is not configured with any proper database (MySQL etc...) as metastore, the local derby derby database is created in the location where spark-submit is ran at the previous step
 
@@ -160,7 +160,7 @@ where,
 ### Prerequisites
 Ensure that `sbt` (version 1.3.4) is installed in Local machine
 
-### Clone the project
+### Clone the project...
 
 ```
 git clone https://github.com/raj638111/access-log-analytics.git
@@ -168,7 +168,7 @@ git clone https://github.com/raj638111/access-log-analytics.git
 cd access-log-analytics
 ```
 
-### Build the project 
+### Build the project...
 
 ```
 sbt assembly
@@ -176,7 +176,7 @@ sbt assembly
 
 ^ This creates a Fat jar `target/scala-2.12/access-log-analytics-assembly-0.1.0-SNAPSHOT.jar`
 
-# Unit test, ... Code Coverage
+# Unit tests, Code Coverage...
 
 The unit tests for the application is written using [ScalaTest](https://www.scalatest.org/)
 
