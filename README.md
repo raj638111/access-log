@@ -139,7 +139,7 @@ where,
 # Code Structure
 
 ```
-├── Dockerfile  // Docker file to create development environment
+├── Dockerfile  // Contains config to package the App with Docker
 ├── README.md
 ├── build.sbt
 ├── derby.log
