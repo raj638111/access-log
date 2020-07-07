@@ -49,7 +49,7 @@ class TopVisitorsNUrlTest extends FunSuite{
   test("Parse Single Line: Invalid format"){
     val goodLine =
       """199.72.81.55- - [01/Jul/1995:00:00:01 -0400]"GET /history/apollo/ HTTP/1.0" 200 6245"""
-    assert(TopVisitorsNUrl.splitLine(goodLine) == null)
+    assert(TopVisitorsNUrl.splitLine(goodLine).dt == null)
   }
 
   /**
@@ -58,7 +58,7 @@ class TopVisitorsNUrlTest extends FunSuite{
   test("Parse Single Line: Invalid Date format"){
     val goodLine =
       """199.72.81.55- - [01/Ju/1995:00:00:01 -0400] "GET /history/apollo/ HTTP/1.0" 200 6245"""
-    assert(TopVisitorsNUrl.splitLine(goodLine) == null)
+    assert(TopVisitorsNUrl.splitLine(goodLine).dt == null)
   }
 
   /*
@@ -66,8 +66,8 @@ class TopVisitorsNUrlTest extends FunSuite{
    */
   test("Parse Input Data (All valid data)"){
     val rdd = spark.sparkContext.parallelize(sampleData)
-    val (validDataRdd, invalidCount) = TopVisitorsNUrl.parseData(rdd)
-    assert(invalidCount == 0)
+    val (_, invalidDataRdd) = TopVisitorsNUrl.parseData(rdd)
+    assert(invalidDataRdd.count == 0)
   }
 
   /**
@@ -78,8 +78,8 @@ class TopVisitorsNUrlTest extends FunSuite{
       """/images/KSC-logosmall.gif HTTP/1.0" 200 1204""" match {
       case sampleData =>
         val rdd = spark.sparkContext.parallelize(sampleData)
-        val (validDataRdd, invalidCount) = TopVisitorsNUrl.parseData(rdd)
-        assert(invalidCount == 1)
+        val (_, invalidDataRdd) = TopVisitorsNUrl.parseData(rdd)
+        assert(invalidDataRdd.count == 1)
     }
   }
 
@@ -91,8 +91,8 @@ class TopVisitorsNUrlTest extends FunSuite{
       """/images/KSC-logosmall.gif HTTP/1.0" 200 1204""" match {
       case sampleData =>
         val rdd = spark.sparkContext.parallelize(sampleData)
-        val (validDataRdd, invalidCount) = TopVisitorsNUrl.parseData(rdd)
-        assert(invalidCount == 1)
+        val (_, invalidDataRdd) = TopVisitorsNUrl.parseData(rdd)
+        assert(invalidDataRdd.count == 1)
     }
   }
 
@@ -151,6 +151,8 @@ class TopVisitorsNUrlTest extends FunSuite{
     assert(param.topN == 3)
     assert(param.dbNtable == "demo.test")
     assert(param.outputPath == tablePath)
+    assert(param.invalidTolerance == 0)
+    assert(param.invalidDataTbl == "demo.invalid_data")
   }
 
   def args(): Array[String] = {
@@ -159,7 +161,9 @@ class TopVisitorsNUrlTest extends FunSuite{
       "--partitionCount", "8",
       "--topN", "3",
       "--dbNtable", "demo.test",
-      "--outputPath", s"${tablePath}")
+      "--outputPath", s"${tablePath}",
+      "--invalidTolerance", "0",
+      "--invalidDataTbl", "demo.invalid_data")
   }
 
   def sampleData(): Array[String] = {

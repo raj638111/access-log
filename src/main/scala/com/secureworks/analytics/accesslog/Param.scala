@@ -5,7 +5,7 @@ import org.apache.log4j.Logger
 import org.apache.spark.sql.SparkSession
 
 /**
- * Command line arguments
+ * Command line arguments Store + Parser
  */
 case class Param(
   inputPath: String = null,       // ftp://anonymous:anonpwd@ita.ee.lbl.gov/traces/
@@ -14,7 +14,9 @@ case class Param(
   topN: Int = 10,                 // Top N limit
   spark: SparkSession = null,
   dbNtable: String = "demo.test", // External hive table to store result
-  outputPath: String = null)      // Path for external hive table
+  outputPath: String = null,      // Path for external hive table
+  invalidTolerance: Long = 0,     // No of malformed data that can be tolerated
+  invalidDataTbl: String = null)  // Table to store malformed data
 {
 
   val log: Logger = Log.getLogger(this.getClass.getName)
@@ -41,6 +43,12 @@ case class Param(
         }
         opt[String]("outputPath").required().action { (x, c) =>
           c.copy(outputPath = x)
+        }
+        opt[Long]("invalidTolerance").required().action { (x, c) =>
+          c.copy(invalidTolerance = x)
+        }
+        opt[String]("invalidDataTbl").required().action { (x, c) =>
+          c.copy(invalidDataTbl = x)
         }
       }
     parser.parse(args, Param()) match {

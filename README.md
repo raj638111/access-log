@@ -89,7 +89,9 @@ spark-submit --master local[*] \
 --partitionCount 8 \
 --topN 3 \
 --dbNtable demo.test \
---outputPath file:///target/demo/test
+--outputPath file:///target/demo/test \
+--invalidCount 0 \
+--invalidDataTbl "demo.invalid_data"
 
 where, 
     inputPath      = Is the actual FTP input

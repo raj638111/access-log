@@ -1,9 +1,7 @@
 package com.secureworks.analytics.accesslog
 
 import java.text.SimpleDateFormat
-
 import com.secureworks.analytics.utils.Log
-import org.apache.commons.net.ftp.FTPClient
 import org.apache.log4j.Logger
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.expressions.Window
@@ -20,15 +18,30 @@ object TopVisitorsNUrl {
    */
   def main(args: Array[String]): Unit = {
     val param = Param().parse(args).setSparkSession()
-    createTable(param.dbNtable, param.spark, param.outputPath)
+    // Create table to store result
+    createTable(param)
     val rdd = param.spark.sparkContext.textFile(param.inputPath)
       .repartition(param.partitionCount)
-    val (validDataRdd, invalidCount) = parseData(rdd)
+    // Parse data into local store
+    val (validDataRdd, invalidDataRdd) = parseData(rdd)
+    // Get topN visitors
     val topVisitorsDf = getTopN(validDataRdd, param.spark,
       "visitor", param.topN)
+    // Get topN URLs
     val topURLsDf = getTopN(validDataRdd, param.spark,
       "url", param.topN)
+    // Store result to table
     storeResult(topVisitorsDf.union(topURLsDf), param.dbNtable)
+    // Store malformed data to table
+    storeInvalidData(invalidDataRdd, param.invalidDataTbl, param.spark)
+    // If there are malformed data, throw an exception to user
+    param.spark.table("demo.invalid_data").count() match {
+      case invalidCount =>
+        if(invalidCount > param.invalidTolerance){
+          throw new Exception(s"More malformed records ($invalidCount) than " +
+            s"the acceptable tolerance (${param.invalidTolerance})")
+        }
+    }
   }
 
   /**
@@ -46,30 +59,45 @@ object TopVisitorsNUrl {
   }
 
   /**
-   * DDL to create database & table in Hive
-   * @param dbNtable <Database>.<Table>
-   * @param spark
+   * Create database
+   * Create 2 table
+   *  . One table to store result
+   *  . Second table to store malformed data
+   * @param param Command line arguments
    */
-  def createTable(dbNtable: String, spark: SparkSession, path: String): Unit = {
-    val db = dbNtable.split("[.]{1}")(0)
-    if(!spark.catalog.databaseExists(db)) {
-      val ddlDb = s"CREATE DATABASE IF NOT EXISTS ${db}"
+  def createTable(param: Param): Unit = {
+    val db = param.dbNtable.split("[.]{1}")(0)
+    // Create database
+    if(!param.spark.catalog.databaseExists(db)) {
+      val ddlDb = s"CREATE DATABASE ${db}"
       log.info("ddlDb -> " + ddlDb)
-      spark.sql(ddlDb)
+      param.spark.sql(ddlDb)
     }
-    if(!spark.catalog.tableExists(dbNtable)) {
+    // Create table to store result
+    if(!param.spark.catalog.tableExists(param.dbNtable)) {
       val ddlTable =
-        s"""CREATE EXTERNAL TABLE IF NOT EXISTS ${dbNtable} (
+        s"""CREATE EXTERNAL TABLE ${param.dbNtable} (
            |count INT COMMENT 'No of visits',
            |value STRING COMMENT 'Value of the sorting column',
            |rnk INT COMMENT 'Top N rank')
            |PARTITIONED BY (dt DATE, sort_col STRING)
            |STORED AS PARQUET
            |TBLPROPERTIES ("parquet.compress"="SNAPPY")
-           |LOCATION '${path}'
+           |LOCATION '${param.outputPath}'
            |""".stripMargin
       log.info("ddlTable -> " + ddlTable)
-      spark.sql(ddlTable)
+      param.spark.sql(ddlTable)
+    }
+    // Create table to store Malformed data (Managed table)
+    if(!param.spark.catalog.tableExists(param.invalidDataTbl)) {
+      val ddlTable =
+        s"""CREATE TABLE ${param.invalidDataTbl} (
+           |str STRING COMMENT 'Malformed data')
+           |STORED AS PARQUET
+           |TBLPROPERTIES ("parquet.compress"="SNAPPY")
+           |""".stripMargin
+      log.info("ddl for Invalid data table -> " + ddlTable)
+      param.spark.sql(ddlTable)
     }
   }
 
@@ -104,11 +132,23 @@ object TopVisitorsNUrl {
    * @return Tuple._1 containing valid lines (which conforms to standard format)
    *         Tuple._2 which contains the no of invalid lines
    */
-  def parseData(rdd: RDD[String]): (RDD[AccessInfo], Long) = {
+  def parseData(rdd: RDD[String]): (RDD[AccessInfo], RDD[AccessInfo]) = {
     val mapped: RDD[AccessInfo] = rdd.map(splitLine(_)).cache
-    val validData: RDD[AccessInfo] = mapped.filter(_ != null)
-    val invalidCount: Long = mapped.filter(_ == null).count
-    (validData, invalidCount)
+    val validData: RDD[AccessInfo] = mapped.filter(_.dt != null)
+    val invalidData: RDD[AccessInfo] = mapped.filter(_.dt == null)
+    (validData, invalidData)
+  }
+
+  /**
+   * Malformed input lines are stored in table for
+   * future reference
+   * @param rdd
+   */
+  def storeInvalidData(rdd: RDD[AccessInfo], table: String, spark: SparkSession): Unit = {
+    import spark.implicits._
+    rdd.toDF.select($"visitor".alias("str"))
+      .write.mode(SaveMode.Overwrite)
+      .insertInto(table)
   }
 
   /**
@@ -127,10 +167,10 @@ object TopVisitorsNUrl {
               url = url.trim, version = version.trim, httpStatus = httpStatus.trim,
               dataSize = dataSize.trim, dt = date)
           case _ =>
-            null
+            AccessInfo(visitor = line)
         }
       case _ =>
-        null
+        AccessInfo(visitor = line)
     }
   }
 
