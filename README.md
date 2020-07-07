@@ -1,20 +1,126 @@
 Table of Contents
 =================
 
-   * [Table of Contents](#table-of-contents)
-   * [What does this Spark App do?](#what-does-this-spark-app-do)
-   * [Project Structure](#project-structure)
-   * [How to setup build environment (Docker) ?](#how-to-setup-build-environment-docker-)
-   * [How to compile &amp; create Fat Jar?](#how-to-compile--create-fat-jar)
-   * [How to run unit tests &amp; code coverage?](#how-to-run-unit-tests--code-coverage)
-   * [How to run the spark application?](#how-to-run-the-spark-application)
-   * [Validating the output](#validating-the-output)
 
 # What does this Spark App do?
 
-This spark application computes `topN` **visitors** & **URL** for the dataset available in `ftp://ita.ee.lbl.gov/traces/NASA_access_log_Jul95.gz`
+- This spark application computes `topN` **visitors** & **URL** for the dataset `ftp://ita.ee.lbl.gov/traces/NASA_access_log_Jul95.gz`
+- For the demo, the app is dockerized and available in Docker Hub
 
-# Project Structure
+# How to run the Dockerized App and validate results?
+
+**Note**: The dockerized app is only for demo and uses `--master local[*]`. For prod deployment, we would still need to deploy the standalone jar. Although it is possible to configure the Dockerized app to connect to specific Spark Master (or) Mesos (or) Yarn, this dockerized app is not configured / tested for that.
+
+### Download the image from Docker Hub
+
+```
+// Download the image
+docker pull rjkumratgmaildotcom/topn:latest
+
+// Verify if the image is downloaded
+
+docker images
+
+REPOSITORY                 TAG                 IMAGE ID            CREATED             SIZE
+rjkumratgmaildotcom/topn   latest              db07e6c99103        About an hour ago   1GB
+
+
+```
+
+### Start a container with the downloaded image
+
+```
+// Start the container
+
+docker run --rm  -dit  --name c1 rjkumratgmaildotcom/topn:latest
+where
+  c1    = The container name
+  --rm  = Ensures we can remove the container using `stop` 
+          command without the need to explicitly provide `rm` command
+          after `stop`
+
+// Ensure the container is running
+
+docker ps
+CONTAINER ID        IMAGE                      COMMAND             CREATED             STATUS              PORTS               NAMES
+24a22b6e08df        rjkumratgmaildotcom/topn   "/bin/bash"         14 minutes ago      Up 14 minutes                           c1        
+```
+
+### Bash to the container & submit the spark job
+
+```
+// Open the Bash shell in Container
+docker exec -it c1 /bin/bash
+
+// you are in this location
+pwd
+/
+
+ls 
+access-log-analytics-assembly-0.1.0-SNAPSHOT.jar  ... spark-3.0.0-bin-hadoop3.2.tgz  ...
+
+// Submit spark job 
+
+Note: The job would take ~1 to 2 minutes to complete
+
+spark-submit --master local[*] \
+--executor-memory 2G --driver-memory 2G \
+--conf spark.hadoop.fs.ftp.data.connection.mode="PASSIVE_LOCAL_DATA_CONNECTION_MODE" \
+--class com.secureworks.analytics.accesslog.TopVisitorsNUrl \
+./access-log-analytics-assembly-0.1.0-SNAPSHOT.jar \
+--inputPath ftp://anonymous:pwd@ita.ee.lbl.gov/traces/NASA_access_log_Jul95.gz \
+--partitionCount 8 \
+--topN 3 \
+--dbNtable demo.test \
+--outputPath file:///target/demo/test
+
+where 
+    inputPath      = Is the actual FTP input
+    partitionCount = Is the repartition count
+    topN           = Is the topN limit
+                     Ex: 3: Will get top 3 URL & Visitors for each date
+    dbNtable       = The hive external database.table where we 
+                     store the result
+    outputPath     = The path linked to hive external table 
+
+```
+
+### Validate the output (Using spark-shell)
+
+Note: Ensure not to change directory after spark-submit in the previous step. As the docker container is not configured with any proper database (MySQL etc...) as metastore, the local derby derby database is created in the location where spark-submit is ran at the previous step
+
+```
+pwd
+/
+
+ls 
+access-log-analytics-assembly-0.1.0-SNAPSHOT.jar  derby.log  ...  
+ spark-3.0.0-bin-hadoop3.2.tgz  ... metastore_db ... 
+
+spark-shell
+scala> spark.table("demo.test").where("dt='1995-07-01'").orderBy("dt").show(100, false)
++-----+----------------------------+---+----------+--------+
+|count|value                       |rnk|dt        |sort_col|
++-----+----------------------------+---+----------+--------+
+|619  |piweba3y.prodigy.com        |1  |1995-07-01|visitor |
+|545  |piweba4y.prodigy.com        |2  |1995-07-01|visitor |
+|533  |alyssa.prodigy.com          |3  |1995-07-01|visitor |
+|3960 |/images/NASA-logosmall.gif  |1  |1995-07-01|url     |
+|3521 |/images/KSC-logosmall.gif   |2  |1995-07-01|url     |
+|2684 |/shuttle/countdown/count.gif|3  |1995-07-01|url     |
++-----+----------------------------+---+----------+--------+
+where,
+    count    = No of hits
+    rnk      = Specifies the top N rank (we are using dense_rank()
+                                    to compute topN)
+    sort_col = The criteria for which the topN is calculated
+               Right now this has 2 values (`visitor` or `url`) as 
+               per the project requirement
+               
+    value    = Value of the sort_col   
+```
+
+# Code Structure
 
 ```
 ├── Dockerfile  // Docker file to create development environment
@@ -49,98 +155,28 @@ This spark application computes `topN` **visitors** & **URL** for the dataset av
 │                           └── TopVisitorsNUrlTest.scala // Unit tests
 ```
 
-# How to setup build environment (Docker) ?
+# Source code, ... and How to compile?
 
-Build environment to compile & test the code can be created in the Local development machine using [Dockerfile](Dockerfile) accompanied with this project. We use this file to create the Docker image with required prerequisites like `Spark` & `SBT` 
+### Prerequisites
+Ensure that `sbt` (version 1.3.4) is installed in Local machine
 
-1. **Ensure docker is installed and running in Local machine**
-2. **From the `${PROJECT_HOME}` directory in Local machine, create docker image**
- ```
-// Create docker image
-docker build .
-
-// Check if docker image is available
-docker images
-REPOSITORY          TAG                 IMAGE ID            CREATED             SIZE
-<none>              <none>              884114325a95        5 hours ago         999MB
-ubuntu              18.04               8e4ce0a6ce69        2 weeks ago         64.2MB
-
-// Note down the docker IMAGE ID
-In this example, IMAGE ID is 884114325a95
- ```   
-3. **Create and run a container using Docker image**
-```
--- Create the Container named mySpark
-
-docker run --rm \
--v <PROJECT_HOME>:/access-log-analytics \
--dit --name mySpark 884114325a95
-
-                        ^ This is the Docker image ID we got from 
-                          previous step
-             ^ mySpark is the name we give to the container
-where,            
-    PROJECT_HOME Is the absolute path of the directory in which you have
-                 cloned the GIT repo
-                 Example: /home/someuser/workspace/access-log-analytics
-
-The above command creates a container called mySpark 
-and also maps the Host machine directory,
-    <PROJECT_HOME>:/access-log-analytics 
-where you have cloned to the GIT repo to the container 
-volume `/access-log-analytics`            
-```
-
-4. **Access the container through shell prompt**
+### Clone the project
 
 ```
--- Access the container
-docker exec -it mySpark /bin/bash
+git clone https://github.com/raj638111/access-log-analytics.git
 
--- Check if project directory is available in the container
-ls
-access-log-analytics  boot  etc   lib  ... spark ...
-    ^ 
-    Project directory should be available    
+cd access-log-analytics
 ```
 
-5. **Cleaning up Docker image & container**
-
-Given below are the commands if needed to cleanup the 
-container and image
+### Build the project 
 
 ```
--- Stop & Remove docker container
-docker container stop mySpark
-
--- Delete image
-docker image rm <image name / ID>       
-```
-
-# How to compile & create Fat Jar?
-```
--- Move to project home 
-cd /access-log-analytics 
-(If in container)
-    (or)
-cd <PROJECT_HOME>
-(If in Host machine) 
-
--- Run all unit tests & build fat jar
 sbt assembly
-    ^ The first time this command is run in the container
-      it will take some time to complete, as many dependencies
-      would need to be downloaded
-[info] [launcher] getting org.scala-sbt sbt 1.3.4  (this may take some time)...
-...
-[info] TopVisitorsNUrlTest:
-[info] - String to java.sql.Date conversion
-[info] - Parse Single Line: Valid format
-...
-[info] All tests passed
 ```
 
-# How to run unit tests & code coverage?
+^ This creates a Fat jar `target/scala-2.12/access-log-analytics-assembly-0.1.0-SNAPSHOT.jar`
+
+# Unit test, ... Code Coverage
 
 The unit tests for the application is written using [ScalaTest](https://www.scalatest.org/)
 
@@ -165,77 +201,35 @@ sbt jacoco
 ...
 ```
 
-# How to run the spark application?
 
-From the `${PROJECT_HOME}`,
-```
-spark-submit --master local[*] \
---executor-memory 2G --driver-memory 2G \
---class com.secureworks.analytics.accesslog.TopVisitorsNUrl \
-./target/scala-2.12/access-log-analytics-assembly-0.1.0-SNAPSHOT.jar \
---inputPath ftp://anonymous:anonpwd@ita.ee.lbl.gov/traces/NASA_access_log_Jul95.gz \
---partitionCount 8 \
---topN 3 \
---dbNtable demo.test \
---outputPath file:///Users/raj/ws/access-log-analytics/target/demo/test
+# Cleaning up Docker image & container
 
-where,
---inputPath      Location of the input data
---partitionCount Repartition count to parallelize computation
---topN           The top N limit
---dbNtable       Hive external table(db.table) in which result 
-                 will be stored
---outputPath     Hive external table path
+Given below are the commands if needed to cleanup the 
+container and image
 
-NOTE: If in prod, replace `--master local[*]` with the required cluster
-manager, which could be `yarn` (or) `mesos` (or) `standalone`
-```
-
-As we are using only the Local derby database as a metastore for Hive, 
-we should be able to see the derby metastore created in the current directory
-```
-ls
-Dockerfile	build.sbt	metastore_db<	spark-warehouse<	target
-README.md	derby.log<	project		src
-```
-
-
-# Validating the output 
-
-**LIMITATIONS**: The development environment use the Local Derby database as metastore 
-and is **NOT** configured with `MySQL` or `PostgreSQL` as a metastore (Because of the limitation in time).
-So, the validation needs to be performed from the same directory
-in which we ran the application in previous step.
-Also, we do not have a separate Hive installation, so we will be
-using `spark-shell` to validate the output
+### Cleanup Container
 
 ```
-spark-shell
-scala> spark.table("demo.test").where("dt='1995-07-01'").orderBy("dt").show(100, false)
-+-----+----------------------------+---+----------+--------+
-|count|value                       |rnk|dt        |sort_col|
-+-----+----------------------------+---+----------+--------+
-|619  |piweba3y.prodigy.com        |1  |1995-07-01|visitor |
-|545  |piweba4y.prodigy.com        |2  |1995-07-01|visitor |
-|533  |alyssa.prodigy.com          |3  |1995-07-01|visitor |
-|3960 |/images/NASA-logosmall.gif  |1  |1995-07-01|url     |
-|3521 |/images/KSC-logosmall.gif   |2  |1995-07-01|url     |
-|2684 |/shuttle/countdown/count.gif|3  |1995-07-01|url     |
-+-----+----------------------------+---+----------+--------+
-where,
-    count    = No of hits
-    rnk      = Specifies the top N rank (we are using dense_rank()
-                                    to compute topN)
-    sort_col = The criteria for which the topN is calculated
-               Right now this has 2 values (`visitor` or `url`) as 
-               per the project requirement
-               
-    value    = Value of the sort_col   
+-- List running / non-running container
+docker ps -a
+
+-- Stop container
+docker container stop <container name / ID>
+
+-- Remove container
+docker container stop <container name / ID>
 
 ```
 
-Also try,
+### Cleanup Image
+
 ```
-spark-shell
-scala> spark.table("demo.test").show(100, false)
-``` 
+-- List all images
+
+docker images
+
+-- Delete image
+
+docker image rm <image name / ID>       
+
+```
