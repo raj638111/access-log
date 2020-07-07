@@ -1,6 +1,22 @@
 Table of Contents
 =================
 
+   * [Table of Contents](#table-of-contents)
+   * [What does this Spark App do?](#what-does-this-spark-app-do)
+   * [How to run the Dockerized App and validate results?](#how-to-run-the-dockerized-app-and-validate-results)
+         * [Download the image from Docker Hub...](#download-the-image-from-docker-hub)
+         * [Start a container with the downloaded image...](#start-a-container-with-the-downloaded-image)
+         * [Bash to the container &amp; submit the spark job...](#bash-to-the-container--submit-the-spark-job)
+         * [Validate the output (Using spark-shell)...](#validate-the-output-using-spark-shell)
+   * [Code Structure](#code-structure)
+   * [Source code, ... and How to compile?](#source-code--and-how-to-compile)
+         * [Prerequisites](#prerequisites)
+         * [Clone the project...](#clone-the-project)
+         * [Build the project...](#build-the-project)
+   * [Unit tests, Code Coverage...](#unit-tests-code-coverage)
+   * [Cleaning up Docker image &amp; container](#cleaning-up-docker-image--container)
+         * [Cleanup Container](#cleanup-container)
+         * [Cleanup Image](#cleanup-image)
 
 # What does this Spark App do?
 
