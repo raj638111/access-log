@@ -25,7 +25,7 @@ Table of Contents
 
 # How to run the Dockerized App and validate results?
 
-**Note**: The dockerized app is only for demo and uses `--master local[*]`. For prod deployment, we would still need to deploy the standalone jar. Although it is possible to configure the Dockerized app to connect to specific Spark Master (or) Mesos (or) Yarn, this dockerized app is not configured / tested for that.
+:point_right: **Note**: The dockerized app is only for demo and uses `--master local[*]`. For prod deployment, we would still need to deploy the standalone jar. Although it is possible to configure the Dockerized app to connect to specific Spark Master (or) Mesos (or) Yarn, this dockerized app is not configured / tested for that.
 
 ### Download the image from Docker Hub...
 
