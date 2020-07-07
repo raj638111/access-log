@@ -173,14 +173,10 @@ scala> spark.table("demo.invalid_data").limit(100).show(100, false)
 ├── Dockerfile  // Contains config to package the App with Docker
 ├── README.md
 ├── build.sbt
-├── derby.log
-├── metastore_db // Derby is used as hive metastore in Local environment
 │   ...
 ├── project
 │   ├── build.properties
 │   ├── plugins.sbt
-├── spark-warehouse
-│   └── demo.db 
 ├── src
 │   ├── main
 │   │   └── scala
@@ -221,7 +217,7 @@ cd access-log-analytics
 sbt assembly
 ```
 
-^ This creates a Fat jar `target/scala-2.12/access-log-analytics-assembly-0.1.0-SNAPSHOT.jar`
+^ This runs unit tests & creates a Fat jar `target/scala-2.12/access-log-analytics-assembly-0.1.0-SNAPSHOT.jar`
 
 # Unit tests, Code Coverage...
 
