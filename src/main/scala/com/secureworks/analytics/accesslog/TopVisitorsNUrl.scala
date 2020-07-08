@@ -8,6 +8,11 @@ import org.apache.spark.sql.expressions.Window
 import org.apache.spark.sql.{DataFrame, Dataset, SaveMode, SparkSession}
 import org.apache.spark.sql.functions._
 
+/*************************************************************
+ * A Spark Job to calculate topN visitors & URLs from
+ * the NASA access log available in
+ * ftp://ita.ee.lbl.gov/traces/NASA_access_log_Jul95.gz
+ *************************************************************/
 object TopVisitorsNUrl {
 
   val log: Logger = Log.getLogger(this.getClass.getName)
