@@ -221,7 +221,7 @@ sbt assembly
 
 # Unit tests, Code Coverage...
 
-The unit tests for the application is written using [ScalaTest](https://www.scalatest.org/). Unit tests are available in [this](./src/test/scala/com/secureworks/analytics/accesslog/TopVisitorsNUrlTest.scala) class
+The unit tests for the application is written using [ScalaTest](https://www.scalatest.org/). Unit tests are available in <a href="./src/test/scala/com/secureworks/analytics/accesslog/TopVisitorsNUrlTest.scala" target="_blank">example</a>  [this](./src/test/scala/com/secureworks/analytics/accesslog/TopVisitorsNUrlTest.scala) class
 
 All the unit tests can be run using `sbt test`
 ```
