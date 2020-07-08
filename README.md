@@ -24,6 +24,26 @@ Table of Contents
 - This spark application computes `topN` **visitors** & **URL** for the dataset `ftp://ita.ee.lbl.gov/traces/NASA_access_log_Jul95.gz`
 - For the demo, the app is dockerized and available in Docker Hub
 
+<ins>**Analysis**</ins>:
+
+I did some analysis of the same dataset in [Kaggle](https://www.kaggle.com/souhagaa/nasa-access-log-dataset-1995)
+
+```
+midcom.com - - [01/Jul/1995:00:20:58 -0400] "GET /icons/sound.xbm HTTP/1.0" 200 530
+
+Here,
+midcom.com Is the visitor. Specifies the site from 
+           where he arrived to NASA website
+01/Jul/1995:00:20:58 -0400
+           Datetime in EST
+/icons/sound.xbm
+            Is the URL in NASA website visited by 
+            Visitor
+200         HTTP response status code
+530         Response size                      
+```
+
+
 # How to run the Dockerized App and validate results?
 
 :point_right: **Note**: The dockerized app is only for demo and uses `--master local[*]`. For prod deployment, we would still need to deploy the standalone jar. Although it is possible to configure the Dockerized app to connect to specific Spark Master (ie Mesos (or) Yarn or Standalone), this dockerized app is not configured / tested for that.
