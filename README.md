@@ -112,7 +112,7 @@ where,
 
 ### Validate the output (Using spark-shell)...
 
-:point_right: **Note**: Ensure not to change directory after spark-submit in the previous step. As the docker container is not configured with any proper database (MySQL etc...) as metastore, the local derby derby database is created in the location where spark-submit is ran at the previous step
+:point_right: **Note**: Ensure NOT to change directory after spark-submit in the previous step. As the docker container is not configured with any proper database (MySQL etc...) as metastore, the local derby derby database is created in the location where spark-submit is ran at the previous step
 
 ```
 pwd
