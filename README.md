@@ -24,7 +24,7 @@ Table of Contents
 - This spark application computes `topN` **visitors** & **URL** for the dataset `ftp://ita.ee.lbl.gov/traces/NASA_access_log_Jul95.gz`
 - For the demo, the app is dockerized and available in Docker Hub
 
-<ins>**Analysis**</ins>:
+<ins>**Analysis / Assumptions**</ins>:
 
 I did some analysis of the same dataset in [Kaggle](https://www.kaggle.com/souhagaa/nasa-access-log-dataset-1995)
 
