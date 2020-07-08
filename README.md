@@ -193,7 +193,6 @@ scala> spark.table("demo.invalid_data").limit(100).show(100, false)
 ├── Dockerfile  // Contains config to package the App with Docker
 ├── README.md
 ├── build.sbt
-│   ...
 ├── project
 │   ├── build.properties
 │   ├── plugins.sbt
